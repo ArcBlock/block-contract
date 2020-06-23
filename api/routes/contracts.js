@@ -23,8 +23,6 @@ const get_url = contractId => `${process.env.BASE_URL}/contracts/detail?contract
 module.exports = {
   init(app) {
     app.put('/api/contracts', async (req, res) => {
-      // we need a better auth module, for api it shall use the tokens taken from the http header (Authorization: bearer <token>)
-
       const requester = req.user;
       if (!requester || !requester.did) return res.status(403).json({ error: 'Login required to create contract' });
 
@@ -33,11 +31,14 @@ module.exports = {
       const params = req.body;
       // in the form when it post the content it shall use Buffer.from(content).toString('base64'). This will
       // work for both text and later on pdf.
-      const content_bin = Buffer.from(params.content, 'base64');
-      const hash = sha3(content_bin);
-      const contractId = genContractId(params.requester, hash, params.signatures);
+      const content_bin = Buffer.from(params.content);
+      const hash = sha3(content_bin)
+        .replace(/^0x/, '')
+        .toUpperCase();
+      const contractId = genContractId(requester.did, hash, params.signatures);
 
-      const c = await Contract.findOne({ _id: contractId });
+      const c = await Contract.findOne({ did: contractId });
+      console.log('create contract', req.body, contractId, hash);
 
       if (c) {
         console.log('duplicate contract', contractId);
@@ -47,23 +48,22 @@ module.exports = {
       const { signatures, synopsis } = params;
 
       const now = new Date();
-      const attrs = {
-        _id: contractId,
+      const result = await Contract.insert({
+        did: contractId,
         requester: requester.did,
         synopsis,
-        content: content_bin,
+        content: params.content,
         hash,
         signatures,
         createdAt: now,
         updatedAt: now,
-      };
-      const contract = new Contract(attrs);
-      console.log('creating contract', attrs);
+      });
+      console.log('creating contract', result);
 
       if (Number(process.env.EMAIL_ENABLED)) {
         console.log('sent email');
         // eslint-disable-next-line no-underscore-dangle
-        const url = get_url(contract._id);
+        const url = get_url(result.did);
         const recipients = signatures.map(v => v.email);
         await send_emails(
           requester.email,
@@ -73,9 +73,7 @@ module.exports = {
         );
       }
 
-      await contract.save();
-
-      res.json(attrs);
+      res.json(result);
     });
 
     app.get('/api/contracts', async (req, res) => {
@@ -102,7 +100,7 @@ module.exports = {
       }
 
       try {
-        const contract = await Contract.findById(req.params.contractId);
+        const contract = await Contract.findOne({ did: req.params.contractId });
         // only signer and requester can view this contract
         if (contract) {
           const isRequester = contract.requester === req.user.did;

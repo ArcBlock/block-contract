@@ -1,34 +1,31 @@
+/* eslint-disable object-curly-newline */
 /* eslint-disable no-console */
 const ForgeSDK = require('@arcblock/forge-sdk');
 const { toAddress } = require('@arcblock/did');
 const { toAssetAddress } = require('@arcblock/did-util');
-const { fromJSON } = require('@arcblock/forge-wallet');
 
 const { wallet } = require('../../libs/auth');
 const { User, Contract } = require('../../models');
 
 module.exports = {
-  action: 'agreement',
+  action: 'sign',
   claims: {
     signature: async ({ extraParams }) => {
-      console.log('agreement.start', extraParams);
       const { contractId } = extraParams || {};
       if (!contractId) {
         throw new Error('Cannot proceed with invalid contractId');
       }
 
-      const contract = await Contract.findById(contractId);
+      const contract = await Contract.findOne({ did: contractId });
       if (!contract) {
         throw new Error('Cannot sign on invalid contract');
       }
 
+      console.log('agreement.start', contract);
+
       return {
         description: 'Please read the contract content carefully and agree to its terms',
-        data: JSON.stringify(
-          { hash: contract.hash, content: Buffer.from(contract.content, 'base64').toString() },
-          null,
-          2
-        ),
+        data: contract.hash,
         type: 'mime::text/plain',
       };
     },
@@ -41,7 +38,7 @@ module.exports = {
       throw new Error('Cannot proceed with invalid contractId');
     }
 
-    const contract = await Contract.findById(contractId);
+    const contract = await Contract.findOne({ did: contractId });
     if (!contract) {
       throw new Error('Cannot sign on invalid contract');
     }
@@ -56,15 +53,9 @@ module.exports = {
       throw new Error('You must agree with the terms to sign the contract');
     }
 
-    console.log('contract.onAuth.payload', {
-      contractId,
-      contract: contract.toJSON(),
-      user: user.toJSON(),
-      claim,
-      userDid,
-    });
+    console.log('contract.onAuth.payload', { contractId, contract, user, claim, userDid });
 
-    contract.signatures = contract.signatures.map(x => {
+    const signatures = contract.signatures.map(x => {
       if (x.email !== user.email) {
         return x;
       }
@@ -77,16 +68,14 @@ module.exports = {
       return x;
     });
 
-    contract.finished = contract.signatures.every(x => !!x.signature);
+    const finished = signatures.every(x => !!x.signature);
     console.log('agreement.onAuth.updateSignature', {
       newSignatures: contract.signatures,
       finished: contract.finished,
     });
 
-    if (contract.finished) {
+    if (finished) {
       try {
-        contract.completedAt = new Date();
-
         // Assemble asset
         const asset = {
           moniker: `block_contract_${contractId}`,
@@ -99,29 +88,42 @@ module.exports = {
               hash: contract.hash,
               contractId,
               requester: toAddress(contract.requester),
-              signatures: contract.signatures,
+              signatures,
             },
           },
         };
-        contract.assetDid = toAssetAddress(asset);
-        asset.address = contract.assetDid;
+        asset.address = toAssetAddress(asset);
         console.log('agreement.onAuth.makeAsset', asset);
 
         // Create asset
-        const tx = await ForgeSDK.sendCreateAssetTx({
+        const hash = await ForgeSDK.sendCreateAssetTx({
           tx: {
             itx: asset,
           },
-          wallet: fromJSON(wallet),
+          wallet,
         });
-        console.log('agreement.onAuth.createAsset', tx);
+        console.log('agreement.onAuth.createAsset', hash);
+
+        const result = await Contract.update(
+          { did: contractId },
+          {
+            $set: {
+              finished,
+              signatures,
+              assetDid: asset.address,
+              completedAt: new Date(),
+            },
+          },
+          { multi: false, upsert: false }
+        );
+
+        console.log('agreement.onAuth.updateContract', result);
       } catch (err) {
         console.error('contract finish error', err);
         console.log(err.errors);
       }
     }
 
-    await contract.save();
     console.log('agreement.onAuth.success', { contractId, userDid });
   },
   onComplete: ({ userDid, extraParams }) => {

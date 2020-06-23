@@ -1,9 +1,9 @@
 /* eslint-disable react/jsx-one-expression-per-line */
 import React, { useState, useContext } from 'react';
-import PropTypes from 'prop-types';
 import moment from 'moment';
-import useAsyncFn from 'react-use/lib/useAsyncFn';
+import useAsync from 'react-use/lib/useAsync';
 import styled from 'styled-components';
+// import { useLocation } from 'react-router-dom';
 import { toDid } from '@arcblock/did';
 
 import Button from '@material-ui/core/Button';
@@ -22,28 +22,20 @@ import api from '../../libs/api';
 import AssetLink from '../../components/asset_link';
 import { SessionContext } from '../../libs/session';
 
-export default function ContractDetail({ query }) {
-  const [isContractLoaded, setContractLoaded] = useState(false);
+export default function ContractDetail() {
+  const query = new URLSearchParams(window.location.search);
   const [isAuthOpen, setAuthOpen] = useState(false);
   const { session } = useContext(SessionContext);
-  const [contract, fetchContract] = useAsyncFn(async () => {
-    const res = await api.get(`/api/contracts/${query.contractId}`);
+  const contract = useAsync(async () => {
+    const res = await api.get(`/api/contracts/${query.get('contractId')}`);
     if (res.status === 200) {
-      res.data.content = Buffer.from(res.data.content, 'base64')
-        .toString('utf8')
-        .split('\n\r')
-        .join('<br/><br/>');
-
       return res.data;
     }
 
     throw new Error(res.data.error || 'Contract load failed');
   });
 
-  if (!isContractLoaded) {
-    fetchContract();
-    setContractLoaded(true);
-  }
+  console.log({ session, contract });
 
   return (
     <Layout title="Contract">
@@ -136,9 +128,9 @@ export default function ContractDetail({ query }) {
             {isAuthOpen && (
               <Dialog open maxWidth="sm" disableBackdropClick disableEscapeKeyDown onClose={() => setAuthOpen(false)}>
                 <DidAuth
-                  action="agreement"
+                  action="sign"
                   checkFn={api.get}
-                  extraParams={query}
+                  extraParams={{ contractId: query.get('contractId') }}
                   onClose={() => setAuthOpen(false)}
                   onSuccess={() => window.location.reload()}
                   messages={{
@@ -156,12 +148,6 @@ export default function ContractDetail({ query }) {
     </Layout>
   );
 }
-
-ContractDetail.getInitialProps = ({ query }) => ({ query });
-
-ContractDetail.propTypes = {
-  query: PropTypes.object.isRequired,
-};
 
 const Main = styled(Grid)`
   && {

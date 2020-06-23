@@ -1,28 +1,16 @@
-const mongoose = require('mongoose');
+const path = require('path');
+const DataStore = require('nedb-promise');
 
-const ContractSchema = new mongoose.Schema({
-  // the did is calculated by sha3(concat(content, hash, signatures list without each sig))
-  _id: { type: String, required: true, trim: true },
-  requester: { type: String, required: true, trim: true },
-  synopsis: { type: String, required: true, trim: true },
-  content: { type: Buffer, required: true },
-  hash: { type: String, required: true },
-  signatures: [
-    {
-      name: { type: String, trim: true },
-      email: { type: String, required: true, trim: true },
-      signer: { type: String, trim: true },
-      signedAt: { type: Date },
-      signature: { type: String },
-    },
-  ],
-  finished: { type: Boolean, default: false },
-  assetDid: { type: String, default: '' },
-  createdAt: { type: Date },
-  updatedAt: { type: Date },
-  completedAt: { type: Date },
+const { dataDir } = require('../libs/auth');
+
+module.exports = new DataStore({
+  filename: path.join(dataDir, 'contracts.db'),
+  autoload: true,
+  timestampData: true,
+  onload: err => {
+    if (err) {
+      // eslint-disable-next-line
+      console.error(`failed to load disk database ${this.filename}`, err);
+    }
+  },
 });
-
-const Contract = mongoose.model('Contract', ContractSchema);
-
-module.exports = Contract;

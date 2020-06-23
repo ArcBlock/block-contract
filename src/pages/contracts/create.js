@@ -29,7 +29,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 export default function CreateContract() {
-  const { handleSubmit, register, errors } = useForm();
+  const { handleSubmit, register, errors } = useForm({
+    synopsis: defaults.synopsis,
+    content: defaults.content,
+    signers: [],
+  });
   const [signerCount, setSignerCount] = useState(2);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState();
@@ -39,14 +43,16 @@ export default function CreateContract() {
     setError('');
 
     try {
-      data.content = Buffer.from(data.content).toString('base64');
-      data.signatures = data.signers.map(x => ({ email: x }));
-      const res = await api.put('/api/contracts', data);
+      const res = await api.put('/api/contracts', {
+        synopsis: data.synopsis,
+        content: data.content,
+        signatures: data.signers.filter(Boolean).map(x => ({ email: x })),
+      });
 
       setCreating(false);
       if (res.status === 200) {
         // eslint-disable-next-line no-underscore-dangle
-        window.location.href = `/contracts/detail?contractId=${res.data._id}`;
+        window.location.href = `/contracts/detail?contractId=${res.data.did}`;
       } else {
         setError(res.data.error || 'Error creating contract');
       }

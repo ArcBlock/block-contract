@@ -65,7 +65,7 @@ server.use((req, res, next) => {
 const router = express.Router();
 
 handlers.attach(Object.assign({ app: router }, require('../routes/auth/login')));
-handlers.attach(Object.assign({ app: router }, require('../routes/auth/agreement')));
+handlers.attach(Object.assign({ app: router }, require('../routes/auth/sign')));
 require('../routes/session').init(router);
 require('../routes/contracts').init(router);
 

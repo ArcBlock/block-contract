@@ -38,11 +38,13 @@ module.exports = {
     process.env.REACT_APP_CHAIN_ID ||
     process.env.GATSBY_CHAIN_ID ||
     process.env.CHAIN_ID ||
-    process.env.chainId,
+    process.env.chainId ||
+    'playground',
   chainHost:
     process.env.LOCAL_CHAIN_HOST ||
     process.env.REACT_APP_CHAIN_HOST ||
     process.env.GATSBY_CHAIN_HOST ||
     process.env.CHAIN_HOST ||
-    process.env.chainHost,
+    process.env.chainHost ||
+    'https://playground.network.arcblockio.cn/api',
 };

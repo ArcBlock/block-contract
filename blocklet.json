@@ -1,0 +1,39 @@
+{
+  "group": "dapp",
+  "color": "primary",
+  "main": "api/index.js",
+  "provider": "devcon",
+  "public_url": "/",
+  "hooks": {
+    "pre-start": "node api/hooks/pre-start.js",
+    "pre-deploy": "npm run bundle"
+  },
+  "hookFiles": ["api/hooks/pre-start.js"],
+  "requiredEnvironments": [
+    {
+      "name": "MAILGUN_USER",
+      "description": "Username of your mailgun account",
+      "required": true,
+      "default": ""
+    },
+    {
+      "name": "MAILGUN_PASSWORD",
+      "description": "Password of your mailgun account",
+      "required": true,
+      "default": ""
+    },
+    {
+      "name": "CHAIN_ID",
+      "description": "ID of the chain contract meta lives",
+      "required": false,
+      "default": "playground"
+    },
+    {
+      "name": "CHAIN_HOST",
+      "description": "Host of the chain contract meta lives",
+      "required": false,
+      "default": "https://playground.network.arcblockio.cn/api"
+    }
+  ],
+  "keywords": ["blockchain", "forge", "contract"]
+}

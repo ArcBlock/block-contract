@@ -16,7 +16,7 @@ import ViewContractPage from './pages/contracts/detail';
 
 import { SessionProvider } from './libs/session';
 
-const theme = create();
+const theme = create({ typography: { fontSize: 14 } });
 
 const GlobalStyle = createGlobalStyle`
   a {

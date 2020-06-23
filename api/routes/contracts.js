@@ -86,7 +86,7 @@ module.exports = {
         const contracts = await Contract.find({
           $or: [{ 'signatures.email': req.user.email }, { requester: req.user.did }],
         });
-        res.json(contracts ? contracts.map(c => c.toObject()) : []);
+        res.json(contracts || []);
       } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });

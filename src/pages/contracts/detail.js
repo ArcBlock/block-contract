@@ -35,8 +35,6 @@ export default function ContractDetail() {
     throw new Error(res.data.error || 'Contract load failed');
   });
 
-  console.log({ session, contract });
-
   return (
     <Layout title="Contract">
       <Main container spacing={5}>

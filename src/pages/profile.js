@@ -1,7 +1,7 @@
 /* eslint-disable object-curly-newline */
 import React, { useState, useContext } from 'react';
 import styled from 'styled-components';
-import useAsyncFn from 'react-use/lib/useAsyncFn';
+import useAsync from 'react-use/lib/useAsync';
 
 import SwipeableViews from 'react-swipeable-views';
 import List from '@material-ui/core/List';
@@ -24,9 +24,8 @@ import { SessionContext } from '../libs/session';
 
 export default function ProfilePage() {
   const [category, setCategory] = useState(0);
-  const [isContractsLoaded, setContractsLoaded] = useState(false);
   const { session } = useContext(SessionContext);
-  const [contracts, fetchContracts] = useAsyncFn(async () => {
+  const contracts = useAsync(async () => {
     const res = await api.get('/api/contracts');
     if (res.status === 200) {
       return res.data;
@@ -36,14 +35,9 @@ export default function ProfilePage() {
   });
 
   const onLogout = async () => {
-    await api.post('/api/logout');
+    session.logout();
     window.location.href = '/';
   };
-
-  if (!isContractsLoaded) {
-    fetchContracts();
-    setContractsLoaded(true);
-  }
 
   const grouped = {
     created: [],

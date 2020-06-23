@@ -28,7 +28,7 @@ function ContractList({ contracts, timeFn, timeHeader, action, theme }) {
 
   const renderRow = contract => (
     <TableRow key={contract._id}>
-      <TableCell width="30%">{contract._id}</TableCell>
+      <TableCell width="30%">{contract.did}</TableCell>
       <TableCell width="30%">{contract.synopsis}</TableCell>
       <TableCell width="10%">{moment(timeFn(contract)).format('YYYY-MM-DD HH:mm')}</TableCell>
       <TableCell width="10%" align="center">
@@ -39,7 +39,7 @@ function ContractList({ contracts, timeFn, timeHeader, action, theme }) {
         )}
       </TableCell>
       <TableCell width="10%" align="center">
-        <Button href={`/contracts/detail?contractId=${contract._id}`} variant="outlined" size="small" color="primary">
+        <Button href={`/contracts/detail?contractId=${contract.did}`} variant="outlined" size="small" color="primary">
           {action}
         </Button>
       </TableCell>

@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
 
 module.exports = {
   send({ to, subject, link, from = 'noreply@arcblockio.cn' }) {
-    const html = getTemplate({ subject, link });
+    const html = getTemplate(subject, link);
     return new Promise((resolve, reject) => {
       transporter.sendMail({ from, to, subject, html }, (err, res) => {
         if (err) {

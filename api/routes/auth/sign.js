@@ -48,14 +48,14 @@ module.exports = {
       throw new Error('Cannot sign with unauthorized user');
     }
 
-    const claim = claims.find(x => x.type === 'signature');
+    const claim = claims.find((x) => x.type === 'signature');
     if (!claim.sig) {
       throw new Error('You must agree with the terms to sign the contract');
     }
 
     console.log('contract.onAuth.payload', { contractId, contract, user, claim, userDid });
 
-    const signatures = contract.signatures.map(x => {
+    const signatures = contract.signatures.map((x) => {
       if (x.email !== user.email) {
         return x;
       }
@@ -68,7 +68,7 @@ module.exports = {
       return x;
     });
 
-    const finished = signatures.every(x => !!x.signature);
+    const finished = signatures.every((x) => !!x.signature);
     console.log('agreement.onAuth.updateSignature', {
       newSignatures: contract.signatures,
       finished: contract.finished,
@@ -122,6 +122,18 @@ module.exports = {
         console.error('contract finish error', err);
         console.log(err.errors);
       }
+    } else {
+      const result = await Contract.update(
+        { did: contractId },
+        {
+          $set: {
+            signatures,
+          },
+        },
+        { multi: false, upsert: false }
+      );
+
+      console.log('agreement.onAuth.updateContract.one', result);
     }
 
     console.log('agreement.onAuth.success', { contractId, userDid });

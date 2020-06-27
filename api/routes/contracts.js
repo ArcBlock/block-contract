@@ -1,13 +1,13 @@
 /* eslint-disable camelcase */
 const mcrypto = require('@arcblock/mcrypto');
 const did = require('@arcblock/did');
-const { send_emails } = require('../libs/email');
+const { send: sendEmail } = require('../libs/email');
 const { Contract } = require('../models');
 
 const sha3 = mcrypto.getHasher(mcrypto.types.HashType.SHA3);
 
 function genContractId(requester, content_hash, signatures) {
-  const info = JSON.stringify(signatures.map(sig => ({ name: sig.name, email: sig.email })));
+  const info = JSON.stringify(signatures.map((sig) => ({ name: sig.name, email: sig.email })));
   const hash = content_hash.replace('0x', '').toLowerCase();
   const data = sha3(`${requester}${hash}${info}`);
   const did_type = {
@@ -18,7 +18,8 @@ function genContractId(requester, content_hash, signatures) {
   return did.fromPublicKey(data, did_type);
 }
 
-const get_url = contractId => `${process.env.BASE_URL}/contracts/detail?contractId=${contractId}`;
+const get_url = (contractId) =>
+  `${process.env.REACT_APP_BASE_URL.replace('3030', '3000')}/contracts/detail?contractId=${contractId}`;
 
 module.exports = {
   init(app) {
@@ -32,9 +33,7 @@ module.exports = {
       // in the form when it post the content it shall use Buffer.from(content).toString('base64'). This will
       // work for both text and later on pdf.
       const content_bin = Buffer.from(params.content);
-      const hash = sha3(content_bin)
-        .replace(/^0x/, '')
-        .toUpperCase();
+      const hash = sha3(content_bin).replace(/^0x/, '').toUpperCase();
       const contractId = genContractId(requester.did, hash, params.signatures);
 
       const c = await Contract.findOne({ did: contractId });
@@ -64,13 +63,12 @@ module.exports = {
         console.log('sent email');
         // eslint-disable-next-line no-underscore-dangle
         const url = get_url(result.did);
-        const recipients = signatures.map(v => v.email);
-        await send_emails(
-          requester.email,
-          recipients,
-          `${requester.name} requests you to sign a contract: ${synopsis}`,
-          url
-        );
+        const recipients = signatures.map((v) => v.email);
+        await sendEmail({
+          to: recipients.join(','),
+          subject: `${requester.name} requests you to sign a contract: ${synopsis}`,
+          link: url,
+        });
       }
 
       res.json(result);
@@ -104,7 +102,7 @@ module.exports = {
         // only signer and requester can view this contract
         if (contract) {
           const isRequester = contract.requester === req.user.did;
-          const isSigner = contract.signatures.find(x => x.email === req.user.email);
+          const isSigner = contract.signatures.find((x) => x.email === req.user.email);
           if (isRequester || isSigner) {
             res.json(contract);
           } else {

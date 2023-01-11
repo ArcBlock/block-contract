@@ -54,7 +54,7 @@
     "http-proxy-middleware": "^0.19.1",
     "ip": "^1.1.5",
     "js-cookie": "^2.2.1",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.11",
     "moment": "^2.24.0",
     "mongoose": "^5.5.11",
